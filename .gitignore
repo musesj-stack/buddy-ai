@@ -1,0 +1,4 @@
+.env
+conversations.db
+__pycache__/
+*.pyc

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buddy AI - 메모장</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f172a;
+      font-family: 'Segoe UI', sans-serif;
+      color: #e2e8f0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 사이드바 */
+    #sidebar {
+      width: 260px;
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #sidebar-header {
+      padding: 20px 16px 12px;
+      border-bottom: 1px solid #334155;
+    }
+
+    #sidebar-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #7c3aed;
+      letter-spacing: 0.5px;
+    }
+
+    #sidebar-header span {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    #new-memo-btn {
+      margin: 12px;
+      padding: 9px 12px;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+
+    #new-memo-btn:hover { background: #6d28d9; }
+
+    #memo-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 8px;
+    }
+
+    .memo-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: background 0.15s;
+      position: relative;
+    }
+
+    .memo-item:hover { background: #273549; }
+    .memo-item.active { background: #312e81; }
+
+    .memo-item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .memo-item-preview {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .memo-item-date {
+      font-size: 10px;
+      color: #475569;
+      margin-top: 2px;
+    }
+
+    .memo-delete-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .memo-item:hover .memo-delete-btn { display: block; }
+    .memo-delete-btn:hover { color: #ef4444; background: #1e293b; }
+
+    /* 메인 에디터 */
+    #editor-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #editor-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #title-input {
+      flex: 1;
+      background: none;
+      border: none;
+      font-size: 22px;
+      font-weight: 700;
+      color: #f1f5f9;
+      font-family: inherit;
+      outline: none;
+    }
+
+    #title-input::placeholder { color: #334155; }
+
+    #save-status {
+      font-size: 11px;
+      color: #475569;
+    }
+
+    #content-input {
+      flex: 1;
+      padding: 24px;
+      background: none;
+      border: none;
+      font-size: 15px;
+      line-height: 1.8;
+      color: #cbd5e1;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+    }
+
+    #content-input::placeholder { color: #334155; }
+
+    #empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #334155;
+      gap: 12px;
+    }
+
+    #empty-state svg { opacity: 0.4; }
+    #empty-state p { font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Buddy AI</h1>
+    <span>메모장</span>
+  </div>
+  <button id="new-memo-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    새 메모
+  </button>
+  <div id="memo-list"></div>
+</div>
+
+<div id="editor-area">
+  <div id="empty-state">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <p>메모를 선택하거나 새 메모를 만드세요</p>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'buddy_ai_memos';
+
+  let memos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let currentId = null;
+  let saveTimer = null;
+
+  function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+  }
+
+  function saveMemos() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(memos));
+  }
+
+  function renderList() {
+    const list = document.getElementById('memo-list');
+    list.innerHTML = '';
+    memos.forEach(memo => {
+      const item = document.createElement('div');
+      item.className = 'memo-item' + (memo.id === currentId ? ' active' : '');
+      item.dataset.id = memo.id;
+      item.innerHTML = `
+        <div class="memo-item-title">${memo.title || '제목 없음'}</div>
+        <div class="memo-item-preview">${memo.content.replace(/\n/g, ' ') || '내용 없음'}</div>
+        <div class="memo-item-date">${formatDate(memo.updatedAt)}</div>
+        <button class="memo-delete-btn" title="삭제">✕</button>
+      `;
+      item.addEventListener('click', e => {
+        if (e.target.classList.contains('memo-delete-btn')) {
+          deleteMemo(memo.id);
+          return;
+        }
+        openMemo(memo.id);
+      });
+      list.appendChild(item);
+    });
+  }
+
+  function openMemo(id) {
+    currentId = id;
+    const memo = memos.find(m => m.id === id);
+    if (!memo) return;
+
+    const area = document.getElementById('editor-area');
+    area.innerHTML = `
+      <div id="editor-header">
+        <input id="title-input" type="text" placeholder="제목" value="${escHtml(memo.title)}">
+        <span id="save-status">저장됨</span>
+      </div>
+      <textarea id="content-input" placeholder="내용을 입력하세요...">${escHtml(memo.content)}</textarea>
+    `;
+
+    document.getElementById('title-input').addEventListener('input', onEdit);
+    document.getElementById('content-input').addEventListener('input', onEdit);
+    renderList();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function onEdit() {
+    const memo = memos.find(m => m.id === currentId);
+    if (!memo) return;
+    memo.title = document.getElementById('title-input').value;
+    memo.content = document.getElementById('content-input').value;
+    memo.updatedAt = new Date().toISOString();
+
+    const status = document.getElementById('save-status');
+    status.textContent = '저장 중...';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveMemos();
+      renderList();
+      status.textContent = '저장됨';
+    }, 500);
+  }
+
+  function createMemo(title = '', content = '') {
+    const memo = {
+      id: generateId(),
+      title,
+      content,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    memos.unshift(memo);
+    saveMemos();
+    renderList();
+    openMemo(memo.id);
+    setTimeout(() => document.getElementById('title-input')?.focus(), 50);
+  }
+
+  function deleteMemo(id) {
+    memos = memos.filter(m => m.id !== id);
+    saveMemos();
+    if (currentId === id) {
+      currentId = null;
+      document.getElementById('editor-area').innerHTML = `
+        <div id="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p>메모를 선택하거나 새 메모를 만드세요</p>
+        </div>
+      `;
+    }
+    renderList();
+  }
+
+  document.getElementById('new-memo-btn').addEventListener('click', () => createMemo());
+
+  // 초기 메모 '석주' 생성 (처음 실행 시에만)
+  if (memos.length === 0) {
+    createMemo('석주', '');
+  } else {
+    renderList();
+    openMemo(memos[0].id);
+  }
+</script>
+</body>
+</html>

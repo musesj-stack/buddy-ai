@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buddy AI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+      background: #F5F3FF;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: #111827;
+      overflow: hidden;
+    }
+
+    /* ── Main layout ── */
+    #main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 256px;
+      flex-shrink: 0;
+      background: #fff;
+      border-right: 1.5px solid #EDE9FE;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-top {
+      padding: 14px 12px 10px;
+      flex-shrink: 0;
+    }
+
+    #new-chat-btn {
+      width: 100%;
+      padding: 9px 14px;
+      background: linear-gradient(135deg, #6D28D9, #7C3AED);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: opacity 0.18s;
+      font-family: inherit;
+      box-shadow: 0 2px 8px rgba(109,40,217,0.25);
+    }
+    #new-chat-btn:hover { opacity: 0.88; }
+
+    .sidebar-section-label {
+      padding: 10px 14px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #C4B5FD;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      flex-shrink: 0;
+    }
+
+    #conv-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 8px 12px;
+    }
+
+    #conv-list::-webkit-scrollbar { width: 3px; }
+    #conv-list::-webkit-scrollbar-thumb { background: #DDD6FE; border-radius: 3px; }
+
+    .conv-item {
+      padding: 9px 10px;
+      border-radius: 9px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s;
+      group: true;
+    }
+    .conv-item:hover { background: #F5F3FF; }
+    .conv-item.active { background: #EDE9FE; }
+
+    .conv-item-body { flex: 1; min-width: 0; }
+
+    .conv-title {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #1F1235;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .conv-item.active .conv-title { color: #6D28D9; font-weight: 600; }
+
+    .conv-date {
+      font-size: 10.5px;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+
+    .conv-actions {
+      display: flex;
+      gap: 3px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .conv-item:hover .conv-actions { opacity: 1; }
+
+    .conv-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      transition: background 0.15s;
+      line-height: 1;
+    }
+    .conv-btn:hover { background: #DDD6FE; }
+    .conv-btn.saved { color: #7C3AED; }
+
+    .conv-expire {
+      font-size: 9.5px;
+      color: #F97316;
+      margin-top: 2px;
+    }
+    .conv-expire.permanent { color: #10B981; }
+
+    /* ── Chat wrapper ── */
+    #chat-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #F5F3FF;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #fff;
+      border-bottom: 1.5px solid #EDE9FE;
+      padding: 0 24px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 12px rgba(109,40,217,0.06);
+      position: relative;
+      z-index: 10;
+    }
+
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #6D28D9, #A855F7);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 15px;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(109,40,217,0.35);
+      letter-spacing: -0.5px;
+    }
+
+    .header-info h1 { font-size: 15px; font-weight: 700; color: #1F1235; letter-spacing: -0.3px; }
+    .header-info p { font-size: 11px; color: #7C3AED; font-weight: 500; margin-top: 1px; }
+
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #15803D;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #22C55E;
+      border-radius: 50%;
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(0.85); }
+    }
+
+    /* ── Chat area ── */
+    #chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px max(40px, calc((100% - 900px) / 2)) 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+    }
+
+    /* ── Welcome ── */
+    .welcome {
+      text-align: center;
+      padding: 52px 20px 36px;
+    }
+
+    .welcome-logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #6D28D9, #A855F7);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 26px;
+      font-weight: 800;
+      margin: 0 auto 20px;
+      box-shadow: 0 10px 28px rgba(109,40,217,0.28);
+      letter-spacing: -0.5px;
+    }
+
+    .welcome h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1F1235;
+      margin-bottom: 8px;
+      letter-spacing: -0.4px;
+    }
+
+    .welcome p {
+      font-size: 13.5px;
+      color: #6B7280;
+      line-height: 1.75;
+    }
+
+    .welcome-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 22px;
+    }
+
+    .welcome-chip {
+      background: #fff;
+      border: 1.5px solid #DDD6FE;
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 12px;
+      color: #6D28D9;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s;
+      font-family: inherit;
+    }
+    .welcome-chip:hover { background: #7C3AED; color: #fff; border-color: #7C3AED; transform: translateY(-1px); }
+
+    /* ── Messages ── */
+    .message { display: flex; gap: 9px; align-items: flex-end; }
+    .message.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .message.ai .avatar {
+      background: linear-gradient(135deg, #6D28D9, #A855F7);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(109,40,217,0.3);
+    }
+    .message.user .avatar { background: #EDE9FE; color: #6D28D9; }
+
+    .bubble {
+      max-width: 75%;
+      padding: 11px 15px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.72;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message.ai .bubble {
+      background: #fff;
+      color: #1F1235;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 14px rgba(109,40,217,0.08), 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .message.user .bubble {
+      background: linear-gradient(135deg, #6D28D9, #7C3AED);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 3px 14px rgba(109,40,217,0.35);
+    }
+
+    /* ── Typing ── */
+    .typing .bubble {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 13px 17px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      background: #C4B5FD;
+      border-radius: 50%;
+      animation: bounce 1.3s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.18s; }
+    .dot:nth-child(3) { animation-delay: 0.36s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-7px); }
+    }
+
+    /* ── Input area ── */
+    #input-area {
+      background: #F5F3FF;
+      border-top: 1.5px solid #EDE9FE;
+      padding: 14px max(40px, calc((100% - 900px) / 2)) 16px;
+      flex-shrink: 0;
+    }
+
+    .input-inner {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: #fff;
+      border: 1.5px solid #DDD6FE;
+      border-radius: 14px;
+      padding: 10px 10px 10px 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 12px rgba(109,40,217,0.06);
+    }
+    .input-inner:focus-within {
+      border-color: #7C3AED;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+    }
+
+    #user-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      max-height: 120px;
+      line-height: 1.55;
+      color: #1F1235;
+      display: block;
+      vertical-align: middle;
+    }
+    #user-input::placeholder { color: #C4B5FD; }
+
+    #send-btn {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #6D28D9, #7C3AED);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.18s, transform 0.12s;
+      box-shadow: 0 2px 10px rgba(109,40,217,0.35);
+    }
+    #send-btn:hover { opacity: 0.88; transform: scale(1.06); }
+    #send-btn:active { transform: scale(0.94); }
+    #send-btn:disabled { background: #E5E7EB; box-shadow: none; cursor: not-allowed; transform: none; }
+    #send-btn svg { pointer-events: none; }
+
+    /* ── Scrollbar ── */
+    #chat-container::-webkit-scrollbar { width: 4px; }
+    #chat-container::-webkit-scrollbar-track { background: transparent; }
+    #chat-container::-webkit-scrollbar-thumb { background: #DDD6FE; border-radius: 4px; }
+
+    /* ── Floating buttons ── */
+    #dark-toggle {
+      position: fixed;
+      bottom: 80px;
+      right: 24px;
+      background: #fff;
+      border: 1.5px solid #DDD6FE;
+      border-radius: 50px;
+      padding: 8px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #6D28D9;
+      box-shadow: 0 3px 14px rgba(109,40,217,0.14);
+      transition: all 0.18s;
+      z-index: 100;
+      font-family: inherit;
+    }
+    #dark-toggle:hover { background: #7C3AED; color: #fff; border-color: #7C3AED; }
+
+    #font-toggle {
+      position: fixed;
+      bottom: 80px;
+      right: 116px;
+      background: #fff;
+      border: 1.5px solid #DDD6FE;
+      border-radius: 50px;
+      padding: 8px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #6D28D9;
+      box-shadow: 0 3px 14px rgba(109,40,217,0.14);
+      transition: all 0.18s;
+      z-index: 100;
+      font-family: inherit;
+    }
+    #font-toggle:hover { background: #7C3AED; color: #fff; border-color: #7C3AED; }
+
+    /* ── Font panel ── */
+    #font-panel {
+      position: fixed;
+      bottom: 130px;
+      right: 24px;
+      background: #fff;
+      border: 1.5px solid #EDE9FE;
+      border-radius: 18px;
+      padding: 18px;
+      width: 292px;
+      box-shadow: 0 12px 36px rgba(109,40,217,0.16);
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+    #font-panel.open { display: flex; }
+
+    .fp-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1F1235;
+      letter-spacing: -0.2px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #F3F0FF;
+    }
+
+    .fp-row { display: flex; flex-direction: column; gap: 7px; }
+    .fp-label { font-size: 10px; font-weight: 700; color: #A78BFA; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    #fp-font {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1.5px solid #EDE9FE;
+      border-radius: 9px;
+      font-size: 13px;
+      color: #374151;
+      background: #FAFAFA;
+      outline: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    #fp-font:focus { border-color: #7C3AED; }
+
+    .fp-weights { display: flex; gap: 4px; }
+    .fp-w {
+      flex: 1;
+      padding: 6px 0;
+      border: 1.5px solid #EDE9FE;
+      border-radius: 7px;
+      background: #FAFAFA;
+      font-size: 10.5px;
+      cursor: pointer;
+      color: #9CA3AF;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .fp-w.active { background: #7C3AED; border-color: #7C3AED; color: #fff; }
+    .fp-w:hover:not(.active) { border-color: #7C3AED; color: #7C3AED; }
+
+    .fp-size { display: flex; align-items: center; gap: 10px; }
+    .fp-size button {
+      width: 30px;
+      height: 30px;
+      border: 1.5px solid #EDE9FE;
+      border-radius: 8px;
+      background: #FAFAFA;
+      font-size: 17px;
+      cursor: pointer;
+      color: #6D28D9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      line-height: 1;
+      font-family: inherit;
+    }
+    .fp-size button:hover { background: #7C3AED; color: #fff; border-color: #7C3AED; }
+    #fp-size-val { flex: 1; text-align: center; font-size: 13px; font-weight: 700; color: #6D28D9; }
+
+    .fp-swatches { display: flex; flex-wrap: wrap; gap: 7px; }
+    .fp-swatch {
+      width: 23px;
+      height: 23px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2.5px solid transparent;
+      outline: 2.5px solid transparent;
+      outline-offset: 1.5px;
+      transition: transform 0.15s, outline-color 0.15s;
+      flex-shrink: 0;
+    }
+    .fp-swatch:hover { transform: scale(1.22); }
+    .fp-swatch.selected { outline-color: #7C3AED; transform: scale(1.15); }
+
+    /* ── Dark mode ── */
+    body.dark { background: #0E0A1C; }
+
+    body.dark header {
+      background: #160D2E;
+      border-color: rgba(124,58,237,0.25);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+    }
+    body.dark .header-info h1 { color: #F0EBFF; }
+    body.dark .header-info p { color: #A78BFA; }
+
+    body.dark #chat-container { background: transparent; }
+
+    body.dark .welcome h2 { color: #F0EBFF; }
+    body.dark .welcome p { color: #9CA3AF; }
+    body.dark .welcome-chip { background: #1A1035; border-color: rgba(124,58,237,0.35); color: #A78BFA; }
+    body.dark .welcome-chip:hover { background: #7C3AED; color: #fff; border-color: #7C3AED; }
+
+    body.dark .message.ai .bubble {
+      background: #1A1035;
+      color: #EDE9FE;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    body.dark .message.user .avatar { background: #2D1B69; color: #C4B5FD; }
+
+    body.dark #input-area {
+      background: #0E0A1C;
+      border-color: rgba(124,58,237,0.25);
+    }
+    body.dark .input-inner {
+      background: #160D2E;
+      border-color: rgba(124,58,237,0.35);
+      box-shadow: none;
+    }
+    body.dark #user-input { color: #F0EBFF; }
+    body.dark #user-input::placeholder { color: #3D2B6E; }
+
+    body.dark #dark-toggle { background: #160D2E; border-color: rgba(124,58,237,0.3); color: #A78BFA; }
+    body.dark #dark-toggle:hover { background: #7C3AED; color: #fff; border-color: #7C3AED; }
+    body.dark #font-toggle { background: #160D2E; border-color: rgba(124,58,237,0.3); color: #A78BFA; }
+    body.dark #font-toggle:hover { background: #7C3AED; color: #fff; border-color: #7C3AED; }
+
+    body.dark #font-panel {
+      background: #160D2E;
+      border-color: rgba(124,58,237,0.3);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+    }
+    body.dark .fp-title { color: #EDE9FE; border-color: rgba(124,58,237,0.2); }
+    body.dark .fp-label { color: #5B21B6; }
+    body.dark #fp-font { background: #0E0A1C; border-color: rgba(124,58,237,0.3); color: #EDE9FE; }
+    body.dark .fp-w { background: #0E0A1C; border-color: rgba(124,58,237,0.3); color: #9CA3AF; }
+    body.dark .fp-w.active { background: #7C3AED; border-color: #7C3AED; color: #fff; }
+    body.dark .fp-size button { background: #0E0A1C; border-color: rgba(124,58,237,0.3); color: #A78BFA; }
+    body.dark #fp-size-val { color: #A78BFA; }
+
+    body.dark #chat-container::-webkit-scrollbar-thumb { background: #2D1B69; }
+
+    body.dark #sidebar { background: #160D2E; border-color: rgba(124,58,237,0.25); }
+    body.dark .conv-item:hover { background: #1F1040; }
+    body.dark .conv-item.active { background: #2D1B69; }
+    body.dark .conv-title { color: #EDE9FE; }
+    body.dark .conv-item.active .conv-title { color: #C4B5FD; }
+    body.dark .conv-date { color: #6B7280; }
+    body.dark .sidebar-section-label { color: #3D2B6E; }
+    body.dark .conv-btn:hover { background: #2D1B69; }
+    body.dark #chat-wrapper { background: #0E0A1C; }
+
+    /* ── 이미지 첨부 ── */
+    #input-area.drag-over { background: #EDE9FE; border-radius: 14px; }
+    #input-area.drag-over .input-inner { border-color: #7C3AED; border-style: dashed; }
+    body.dark #input-area.drag-over { background: #1A1035; }
+
+    #attach-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      color: #A78BFA;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
+      padding: 0;
+    }
+    #attach-btn:hover { background: #EDE9FE; color: #6D28D9; }
+    body.dark #attach-btn { color: #5B21B6; }
+    body.dark #attach-btn:hover { background: #2D1B69; color: #C4B5FD; }
+
+    #image-preview-area {
+      display: none;
+      padding: 0 0 8px 0;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .img-preview-item {
+      display: inline-flex;
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid #DDD6FE;
+    }
+    .img-preview-item img {
+      height: 72px;
+      width: auto;
+      max-width: 120px;
+      object-fit: cover;
+      display: block;
+    }
+    .img-preview-remove {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 18px;
+      height: 18px;
+      background: rgba(0,0,0,0.55);
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .bubble img {
+      max-width: 100%;
+      max-height: 260px;
+      border-radius: 8px;
+      display: block;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">B</div>
+  <div class="header-info">
+    <h1>Buddy AI</h1>
+    <p>앨범버디 운영팀 어시스턴트</p>
+  </div>
+  <div class="header-right">
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      온라인
+    </div>
+  </div>
+</header>
+
+<div id="main">
+
+  <!-- 사이드바 -->
+  <aside id="sidebar">
+    <div class="sidebar-top">
+      <button id="new-chat-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        새 대화
+      </button>
+    </div>
+    <div class="sidebar-section-label">대화 목록</div>
+    <div id="conv-list"></div>
+  </aside>
+
+  <!-- 채팅 영역 -->
+  <div id="chat-wrapper">
+    <div id="chat-container">
+      <div class="welcome">
+        <div class="welcome-logo">B</div>
+        <h2>안녕하세요! Buddy AI입니다</h2>
+        <p>앨범버디 운영팀의 DB 작업 및 운영 문의를 도와드립니다.<br>궁금하신 점을 자유롭게 입력해 주세요.</p>
+        <div class="welcome-chips">
+          <button class="welcome-chip" onclick="fillInput('주문번호로 배송 현황 조회')">주문번호로 배송 현황 조회</button>
+          <button class="welcome-chip" onclick="fillInput('상품 재고 확인 방법')">상품 재고 확인 방법</button>
+          <button class="welcome-chip" onclick="fillInput('사용자 정보 조회')">사용자 정보 조회</button>
+          <button class="welcome-chip" onclick="fillInput('결제 오류 주문 확인')">결제 오류 주문 확인</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <div id="image-preview-area"></div>
+      <div class="input-inner">
+        <button id="attach-btn" type="button" title="이미지 첨부">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
+        <input type="file" id="image-input" accept="image/*" multiple style="display:none">
+        <textarea id="user-input" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+        <button id="send-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<button id="font-toggle" title="글꼴 설정">Aa</button>
+
+<div id="font-panel">
+  <div class="fp-title">글꼴 설정</div>
+  <div class="fp-row">
+    <span class="fp-label">글꼴</span>
+    <select id="fp-font">
+      <option value="'Pretendard Variable', Pretendard, sans-serif">프리텐다드</option>
+      <option value="'Noto Sans KR', sans-serif">노토 산스 KR</option>
+      <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
+      <option value="'Gothic A1', sans-serif">고딕 A1</option>
+      <option value="'Gowun Dodum', sans-serif">고운 돋움</option>
+      <option value="'Nanum Myeongjo', serif">나눔명조</option>
+      <option value="'IBM Plex Sans KR', sans-serif">IBM 플렉스 KR</option>
+      <option value="'Black Han Sans', sans-serif">블랙 한 산스</option>
+      <option value="'Jua', sans-serif">주아</option>
+      <option value="'Do Hyeon', sans-serif">도현</option>
+    </select>
+  </div>
+  <div class="fp-row">
+    <span class="fp-label">굵기</span>
+    <div class="fp-weights">
+      <button class="fp-w" data-w="300">Light</button>
+      <button class="fp-w" data-w="400">Regular</button>
+      <button class="fp-w" data-w="500">Medium</button>
+      <button class="fp-w" data-w="600">Semi</button>
+      <button class="fp-w" data-w="700">Bold</button>
+    </div>
+  </div>
+  <div class="fp-row">
+    <span class="fp-label">크기</span>
+    <div class="fp-size">
+      <button id="fp-size-down">−</button>
+      <span id="fp-size-val">14px</span>
+      <button id="fp-size-up">+</button>
+    </div>
+  </div>
+  <div class="fp-row">
+    <span class="fp-label">색상</span>
+    <div class="fp-swatches" id="fp-all-colors"></div>
+  </div>
+</div>
+
+<button id="dark-toggle">🌙 다크</button>
+
+<script>
+  const chat = document.getElementById('chat-container');
+  const input = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
+
+  let messages = [];
+  let isLoading = false;
+  let currentConvId = null;
+  let pendingImages = [];
+
+  function scrollBottom() { chat.scrollTop = chat.scrollHeight; }
+
+  function fillInput(text) {
+    input.value = text;
+    input.focus();
+    const welcome = document.querySelector('.welcome');
+    if (welcome) welcome.remove();
+  }
+
+  function addMessage(role, content) {
+    const wrap = document.createElement('div');
+    wrap.className = `message ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = role === 'ai' ? 'B' : '나';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+
+    if (typeof content === 'string') {
+      bubble.textContent = content;
+    } else if (Array.isArray(content)) {
+      content.forEach(part => {
+        if (part.type === 'image' && part.source) {
+          const img = document.createElement('img');
+          img.src = `data:${part.source.media_type};base64,${part.source.data}`;
+          bubble.appendChild(img);
+        } else if (part.type === 'text' && part.text) {
+          const span = document.createElement('span');
+          span.style.display = 'block';
+          span.textContent = part.text;
+          bubble.appendChild(span);
+        }
+      });
+    }
+
+    wrap.appendChild(avatar);
+    wrap.appendChild(bubble);
+    chat.appendChild(wrap);
+    scrollBottom();
+    return wrap;
+  }
+
+  function renderImagePreviews() {
+    const previewArea = document.getElementById('image-preview-area');
+    previewArea.innerHTML = '';
+    if (pendingImages.length === 0) {
+      previewArea.style.display = 'none';
+      return;
+    }
+    previewArea.style.display = 'flex';
+    pendingImages.forEach((img) => {
+      const item = document.createElement('div');
+      item.className = 'img-preview-item';
+      const previewImg = document.createElement('img');
+      previewImg.src = `data:${img.mediaType};base64,${img.base64}`;
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'img-preview-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => {
+        pendingImages = pendingImages.filter(i => i.id !== img.id);
+        renderImagePreviews();
+      });
+      item.appendChild(previewImg);
+      item.appendChild(removeBtn);
+      previewArea.appendChild(item);
+    });
+  }
+
+  function clearPendingImage() {
+    pendingImages = [];
+    renderImagePreviews();
+  }
+
+  function showTyping() {
+    const wrap = document.createElement('div');
+    wrap.className = 'message ai typing';
+    wrap.id = 'typing-indicator';
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = 'B';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    wrap.appendChild(avatar);
+    wrap.appendChild(bubble);
+    chat.appendChild(wrap);
+    scrollBottom();
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  async function sendMessage() {
+    const text = input.value.trim();
+    if ((!text && pendingImages.length === 0) || isLoading) return;
+
+    isLoading = true;
+    sendBtn.disabled = true;
+    input.value = '';
+    input.style.height = 'auto';
+
+    const welcome = document.querySelector('.welcome');
+    if (welcome) welcome.remove();
+
+    let userContent;
+    if (pendingImages.length > 0) {
+      userContent = pendingImages.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } }));
+      if (text) userContent.push({ type: 'text', text });
+      clearPendingImage();
+    } else {
+      userContent = text;
+    }
+
+    addMessage('user', userContent);
+    messages.push({ role: 'user', content: userContent });
+    showTyping();
+
+    // 첫 메시지면 새 대화 생성
+    if (!currentConvId) {
+      const r = await fetch('/api/conversations', { method: 'POST' });
+      const c = await r.json();
+      currentConvId = c.id;
+    }
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages, conversation_id: currentConvId })
+      });
+      const data = await res.json();
+      removeTyping();
+      if (data.error) {
+        addMessage('ai', '오류가 발생했습니다: ' + data.error);
+      } else {
+        addMessage('ai', data.content);
+        messages.push({ role: 'assistant', content: data.content });
+        loadConvList();
+      }
+    } catch (e) {
+      removeTyping();
+      addMessage('ai', '서버 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+
+    isLoading = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+
+  // ── 이미지 첨부 ──
+  const imageInput = document.getElementById('image-input');
+  const attachBtn = document.getElementById('attach-btn');
+  const previewArea = document.getElementById('image-preview-area');
+
+  attachBtn.addEventListener('click', () => imageInput.click());
+
+  function showImagePreview(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (pendingImages.length >= 4) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result.split(',')[1];
+      pendingImages.push({ base64, mediaType: file.type, id: Date.now() + Math.random() });
+      renderImagePreviews();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  imageInput.addEventListener('change', () => {
+    Array.from(imageInput.files).forEach(f => showImagePreview(f));
+    imageInput.value = '';
+  });
+
+  // 붙여넣기 (Ctrl+V)
+  document.addEventListener('paste', (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        showImagePreview(item.getAsFile());
+        break;
+      }
+    }
+  });
+
+  // 드래그 앤 드롭
+  const inputArea = document.getElementById('input-area');
+  inputArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    inputArea.classList.add('drag-over');
+  });
+  inputArea.addEventListener('dragleave', () => inputArea.classList.remove('drag-over'));
+  inputArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    inputArea.classList.remove('drag-over');
+    Array.from(e.dataTransfer.files).forEach(f => showImagePreview(f));
+  });
+
+  // ── 다크모드 ──
+  const darkToggle = document.getElementById('dark-toggle');
+  if (localStorage.getItem('dark') === '1') {
+    document.body.classList.add('dark');
+    darkToggle.textContent = '☀️ 라이트';
+  }
+  darkToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    const isDark = document.body.classList.contains('dark');
+    darkToggle.textContent = isDark ? '☀️ 라이트' : '🌙 다크';
+    localStorage.setItem('dark', isDark ? '1' : '0');
+  });
+
+  // ── 글꼴 설정 ──
+  const ALL_COLORS = [
+    '#FFFFFF','#111827','#374151','#6B7280','#EF4444',
+    '#F97316','#3B82F6','#10B981','#8B5CF6','#EC4899',
+    '#06B6D4','#A47551','#87A878','#7EC8E3','#B8A9C9',
+    '#F9DC5C','#FF6B8A','#98E4D3','#C084FC','#FB923C'
+  ];
+
+  let fpState = {
+    font: localStorage.getItem('fp_font') || "'Pretendard Variable', Pretendard, sans-serif",
+    weight: parseInt(localStorage.getItem('fp_weight')) || 400,
+    size: parseInt(localStorage.getItem('fp_size')) || 14,
+    color: localStorage.getItem('fp_color') || '#111827'
+  };
+
+  function applyFontSettings() {
+    let el = document.getElementById('fp-dynamic-style');
+    if (!el) { el = document.createElement('style'); el.id = 'fp-dynamic-style'; document.head.appendChild(el); }
+    el.textContent = `
+      body { font-family: ${fpState.font}; }
+      .bubble { font-family: ${fpState.font}; font-weight: ${fpState.weight}; font-size: ${fpState.size}px; }
+      .message.ai .bubble { color: ${fpState.color} !important; }
+    `;
+    document.getElementById('fp-size-val').textContent = fpState.size + 'px';
+    document.querySelectorAll('.fp-w').forEach(b => b.classList.toggle('active', parseInt(b.dataset.w) === fpState.weight));
+    const sel = document.getElementById('fp-font');
+    if (sel) sel.value = fpState.font;
+    document.querySelectorAll('.fp-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === fpState.color));
+  }
+
+  function saveFontSettings() {
+    localStorage.setItem('fp_font', fpState.font);
+    localStorage.setItem('fp_weight', fpState.weight);
+    localStorage.setItem('fp_size', fpState.size);
+    localStorage.setItem('fp_color', fpState.color);
+  }
+
+  const colorContainer = document.getElementById('fp-all-colors');
+  ALL_COLORS.forEach(hex => {
+    const s = document.createElement('button');
+    s.className = 'fp-swatch';
+    s.dataset.color = hex;
+    s.style.background = hex;
+    s.title = hex;
+    s.addEventListener('click', () => { fpState.color = hex; saveFontSettings(); applyFontSettings(); });
+    colorContainer.appendChild(s);
+  });
+
+  document.getElementById('fp-font').addEventListener('change', e => {
+    fpState.font = e.target.value; saveFontSettings(); applyFontSettings();
+  });
+
+  document.querySelectorAll('.fp-w').forEach(btn => {
+    btn.addEventListener('click', () => { fpState.weight = parseInt(btn.dataset.w); saveFontSettings(); applyFontSettings(); });
+  });
+
+  document.getElementById('fp-size-down').addEventListener('click', () => {
+    if (fpState.size > 11) { fpState.size--; saveFontSettings(); applyFontSettings(); }
+  });
+  document.getElementById('fp-size-up').addEventListener('click', () => {
+    if (fpState.size < 22) { fpState.size++; saveFontSettings(); applyFontSettings(); }
+  });
+
+  const fontToggle = document.getElementById('font-toggle');
+  const fontPanel = document.getElementById('font-panel');
+  fontToggle.addEventListener('click', e => { e.stopPropagation(); fontPanel.classList.toggle('open'); });
+  document.addEventListener('click', e => {
+    if (!fontPanel.contains(e.target) && e.target !== fontToggle) fontPanel.classList.remove('open');
+  });
+
+  applyFontSettings();
+
+  // ── 대화 목록 관리 ──
+  function formatDate(ts) {
+    const d = new Date(ts * 1000);
+    const now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60) return '방금';
+    if (diff < 3600) return Math.floor(diff / 60) + '분 전';
+    if (diff < 86400) return Math.floor(diff / 3600) + '시간 전';
+    return Math.floor(diff / 86400) + '일 전';
+  }
+
+  function daysLeft(ts, saved) {
+    if (saved) return null;
+    const expireAt = ts + 7 * 24 * 3600;
+    const left = Math.ceil((expireAt - Date.now() / 1000) / 86400);
+    return left;
+  }
+
+  async function loadConvList() {
+    const res = await fetch('/api/conversations');
+    const list = await res.json();
+    const container = document.getElementById('conv-list');
+    container.innerHTML = '';
+
+    list.forEach(conv => {
+      const item = document.createElement('div');
+      item.className = 'conv-item' + (conv.id === currentConvId ? ' active' : '');
+      item.dataset.id = conv.id;
+
+      const left = daysLeft(conv.created_at, conv.saved);
+      const expireText = conv.saved
+        ? '<div class="conv-expire permanent">영구 저장됨</div>'
+        : left <= 2 ? `<div class="conv-expire">${left}일 후 삭제</div>` : '';
+
+      item.innerHTML = `
+        <div class="conv-item-body">
+          <div class="conv-title">${conv.title}</div>
+          <div class="conv-date">${formatDate(conv.created_at)}</div>
+          ${expireText}
+        </div>
+        <div class="conv-actions">
+          <button class="conv-btn ${conv.saved ? 'saved' : ''}" data-action="save" title="${conv.saved ? '저장 해제' : '저장'}">
+            ${conv.saved ? '★' : '☆'}
+          </button>
+          <button class="conv-btn" data-action="delete" title="삭제">✕</button>
+        </div>
+      `;
+
+      // 대화 클릭 → 불러오기
+      item.addEventListener('click', async (e) => {
+        if (e.target.closest('[data-action]')) return;
+        await loadConversation(conv.id);
+      });
+
+      // 저장 버튼
+      item.querySelector('[data-action="save"]').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await fetch(`/api/conversations/${conv.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ saved: conv.saved ? 0 : 1 })
+        });
+        loadConvList();
+      });
+
+      // 삭제 버튼
+      item.querySelector('[data-action="delete"]').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!confirm('이 대화를 삭제할까요?')) return;
+        await fetch(`/api/conversations/${conv.id}`, { method: 'DELETE' });
+        if (conv.id === currentConvId) startNewChat();
+        else loadConvList();
+      });
+
+      container.appendChild(item);
+    });
+  }
+
+  async function loadConversation(convId) {
+    const res = await fetch(`/api/conversations/${convId}`);
+    const conv = await res.json();
+
+    currentConvId = convId;
+    messages = conv.messages;
+
+    // 채팅창 초기화
+    chat.innerHTML = '';
+
+    messages.forEach(m => {
+      if (m.role === 'user') addMessage('user', m.content);
+      else if (m.role === 'assistant') addMessage('ai', m.content);
+    });
+
+    loadConvList();
+    input.focus();
+  }
+
+  function startNewChat() {
+    currentConvId = null;
+    messages = [];
+    chat.innerHTML = `
+      <div class="welcome">
+        <div class="welcome-logo">B</div>
+        <h2>안녕하세요! Buddy AI입니다</h2>
+        <p>앨범버디 운영팀의 DB 작업 및 운영 문의를 도와드립니다.<br>궁금하신 점을 자유롭게 입력해 주세요.</p>
+        <div class="welcome-chips">
+          <button class="welcome-chip" onclick="fillInput('주문번호로 배송 현황 조회')">주문번호로 배송 현황 조회</button>
+          <button class="welcome-chip" onclick="fillInput('상품 재고 확인 방법')">상품 재고 확인 방법</button>
+          <button class="welcome-chip" onclick="fillInput('사용자 정보 조회')">사용자 정보 조회</button>
+          <button class="welcome-chip" onclick="fillInput('결제 오류 주문 확인')">결제 오류 주문 확인</button>
+        </div>
+      </div>`;
+    loadConvList();
+    input.focus();
+  }
+
+  document.getElementById('new-chat-btn').addEventListener('click', startNewChat);
+
+  // 초기 목록 로드
+  loadConvList();
+</script>
+
+</body>
+</html>
