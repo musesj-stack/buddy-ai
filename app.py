@@ -152,11 +152,12 @@ status별 판단:
 - 창고 입고 후 국제 배송 지연: package_delivery_item에서 international_tracking_number 확인
 
 6. component 삭제 전 재고 확인
-component 삭제 시 package_component_inventory 또는 purchase_component_inventory에 연결된 row가 있으면 FK 오류 발생.
+component 삭제 전 아래 두 테이블 모두 참조 여부 확인 필수 (FK 제약으로 참조 row가 있으면 삭제 불가).
 
-[1단계] package_component_inventory → `component_id = '삭제할ID'` 조회 → 연결 row 있으면 먼저 삭제
-[1단계] purchase_component_inventory → `component_id = '삭제할ID'` 조회 → 연결 row 있으면 먼저 삭제
-[2단계] component 테이블 → 해당 id DELETE 실행
+[1단계] package_component_inventory → `component_id = '삭제할component_id'` 조회
+[2단계] purchase_component_inventory → `component_id = '삭제할component_id'` 조회
+[3단계] 두 테이블 모두 참조 row 없으면 → `DELETE FROM component WHERE id = '해당id'`
+참조 row 있으면 → 이미 처리된 패키지/발주와 연결된 건이므로 단독 판단 금지, PO에게 문의
 
 7. 번개장터 연동 (현재 미운영, 참고용)
 상태 흐름: paid → price_change_pending → ordered → shipped → arrived → stocked → 배송요청
