@@ -151,7 +151,14 @@ status별 판단:
 - purchased: 판매처 구매 완료, 국내 배송 중 → national_tracking_number로 국내 배송 추적
 - 창고 입고 후 국제 배송 지연: package_delivery_item에서 international_tracking_number 확인
 
-6. 번개장터 연동 (현재 미운영, 참고용)
+6. component 삭제 전 재고 확인
+component 삭제 시 package_component_inventory 또는 purchase_component_inventory에 연결된 row가 있으면 FK 오류 발생.
+
+[1단계] package_component_inventory → `component_id = '삭제할ID'` 조회 → 연결 row 있으면 먼저 삭제
+[1단계] purchase_component_inventory → `component_id = '삭제할ID'` 조회 → 연결 row 있으면 먼저 삭제
+[2단계] component 테이블 → 해당 id DELETE 실행
+
+7. 번개장터 연동 (현재 미운영, 참고용)
 상태 흐름: paid → price_change_pending → ordered → shipped → arrived → stocked → 배송요청
 취소 케이스:
 - 일반 취소: payment_canceled + 환불
