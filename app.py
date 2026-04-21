@@ -417,6 +417,18 @@ purchase_item_delivery: 발주 아이템 국내 배송비 기록
   - processed: false→package_process(warehouse_delivery) 생성 후 true
   - admin_user_id(처리한관리자ID)
 
+purchase_component_inventory: 발주 상품의 구성품 수량 재고
+  - PK(order_id, goods_id, component_id)
+  - order_id (FK→order): 발주에 대응되는 주문 ID
+  - goods_id (FK→goods): 발주한 상품 ID
+  - component_id (FK→component): 발주 상품의 구성품 ID
+  - purchase_id (FK→purchase): 발주 ID
+  - order_item_id (FK→order_item): 주문 아이템 ID
+  - purchase_item_id (FK→purchase_item)
+  - quantity: 구성품 발주 수량
+  - processed: 미사용
+  - admin_memo
+
 --- 패키지 ---
 
 package: 실물 패키지(박스) 관리
